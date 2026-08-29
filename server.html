@@ -1,0 +1,3050 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>TradeLab — Trading Toolkit</title>
+
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+
+:root{
+  --bg:#070b10;
+  --panel:#0d141d;
+  --panel2:#101a24;
+  --input:#080e15;
+  --line:#1e2c39;
+  --text:#eaf0f5;
+  --muted:#718094;
+  --cyan:#3fd8c6;
+  --green:#42d392;
+  --red:#f16d62;
+  --yellow:#e8c15a;
+}
+
+body{
+  background:
+    radial-gradient(circle at top,#12202d 0,#070b10 52%);
+  color:var(--text);
+  font-family:Arial,sans-serif;
+  min-height:100vh;
+}
+
+.app{
+  width:100%;
+  max-width:1200px;
+  margin:auto;
+  padding:15px;
+}
+
+header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  padding:8px 2px 18px;
+}
+
+.logo{
+  font-size:23px;
+  font-weight:800;
+}
+
+.logo span{
+  color:var(--cyan);
+}
+
+.status{
+  color:var(--green);
+  font:10px monospace;
+}
+
+.nav{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  padding-bottom:12px;
+}
+
+.nav button{
+  white-space:nowrap;
+  background:var(--panel);
+  color:var(--muted);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:10px 15px;
+  cursor:pointer;
+}
+
+.nav button.active{
+  color:var(--cyan);
+  border-color:var(--cyan);
+  background:rgba(63,216,198,.08);
+}
+
+.page{
+  display:none;
+}
+
+.page.active{
+  display:block;
+}
+
+.card{
+  background:linear-gradient(
+    180deg,
+    var(--panel2),
+    var(--panel)
+  );
+  border:1px solid var(--line);
+  border-radius:13px;
+  padding:18px;
+  margin-bottom:15px;
+}
+
+.title{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:16px;
+}
+
+.title h2{
+  font-size:16px;
+}
+
+.title span{
+  color:var(--muted);
+  font:9px monospace;
+}
+
+.calcGrid{
+  display:grid;
+  grid-template-columns:1fr 1fr;
+  gap:12px;
+}
+
+.field{
+  margin-bottom:2px;
+}
+
+.field label{
+  display:flex;
+  justify-content:space-between;
+  color:var(--muted);
+  font:10px monospace;
+  margin-bottom:6px;
+  text-transform:uppercase;
+}
+
+.field label span{
+  color:#356d68;
+}
+
+input,select{
+  width:100%;
+  background:var(--input);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:12px;
+  outline:none;
+  font-family:monospace;
+}
+
+input:focus,select:focus{
+  border-color:var(--cyan);
+}
+
+.results{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+
+.result{
+  background:var(--input);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px;
+}
+
+.result.wide{
+  grid-column:1/-1;
+}
+
+.result small{
+  display:block;
+  color:var(--muted);
+  font:9px monospace;
+  text-transform:uppercase;
+  margin-bottom:7px;
+}
+
+.result strong{
+  font:20px monospace;
+}
+
+.green{color:var(--green)!important}
+.red{color:var(--red)!important}
+.cyan{color:var(--cyan)!important}
+.yellow{color:var(--yellow)!important}
+
+.badge{
+  display:inline-block;
+  padding:7px 10px;
+  border-radius:7px;
+  font:10px monospace;
+  margin-bottom:14px;
+}
+
+.badge.long{
+  color:var(--green);
+  background:rgba(66,211,146,.1);
+  border:1px solid rgba(66,211,146,.3);
+}
+
+.badge.short{
+  color:var(--red);
+  background:rgba(241,109,98,.1);
+  border:1px solid rgba(241,109,98,.3);
+}
+
+.badge.invalid{
+  color:var(--muted);
+  background:var(--input);
+  border:1px solid var(--line);
+}
+
+.rrbar{
+  height:32px;
+  display:flex;
+  overflow:hidden;
+  border:1px solid var(--line);
+  border-radius:7px;
+}
+
+.rrrisk{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:rgba(241,109,98,.2);
+  color:var(--red);
+  font:10px monospace;
+}
+
+.rrreward{
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  background:rgba(66,211,146,.2);
+  color:var(--green);
+  font:10px monospace;
+}
+
+.analyzerTop{
+  display:flex;
+  gap:7px;
+  overflow-x:auto;
+  margin-bottom:10px;
+}
+
+.analyzerTop button,
+.analyzerTop select{
+  width:auto;
+  white-space:nowrap;
+  padding:9px 11px;
+}
+
+.analyzerTop button{
+  background:var(--input);
+  color:var(--muted);
+  border:1px solid var(--line);
+  border-radius:7px;
+  cursor:pointer;
+}
+
+.analyzerTop button.active{
+  color:var(--cyan);
+  border-color:var(--cyan);
+}
+
+.chartLayout{
+  display:grid;
+  grid-template-columns:1fr 250px;
+  gap:12px;
+}
+
+.chartBox{
+  background:var(--input);
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.chartHeader{
+  display:flex;
+  justify-content:space-between;
+  padding:12px;
+  border-bottom:1px solid var(--line);
+}
+
+.chartPair{
+  font-weight:bold;
+}
+
+.chartInfo{
+  color:var(--muted);
+  font:9px monospace;
+  margin-top:4px;
+}
+
+#chart{
+  width:100%;
+  height:500px;
+  display:block;
+}
+
+.analysisPanel{
+  background:var(--panel);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px;
+}
+
+.signal{
+  background:var(--input);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:11px;
+  margin-bottom:8px;
+}
+
+.signal small{
+  color:var(--muted);
+  font:9px monospace;
+}
+
+.signal div{
+  margin-top:5px;
+  font:12px monospace;
+}
+
+.stats{
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+  gap:10px;
+  margin-bottom:15px;
+}
+
+.stat{
+  background:var(--input);
+  border:1px solid var(--line);
+  border-radius:10px;
+  padding:14px;
+}
+
+.stat small{
+  display:block;
+  color:var(--muted);
+  font:9px monospace;
+  margin-bottom:7px;
+}
+
+.stat strong{
+  font:19px monospace;
+}
+
+.formGrid{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+
+.actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:15px;
+}
+
+.btn{
+  background:var(--input);
+  color:var(--text);
+  border:1px solid var(--line);
+  border-radius:8px;
+  padding:10px 13px;
+  cursor:pointer;
+  font-size:11px;
+}
+
+.btn.primary{
+  background:var(--cyan);
+  color:#06100f;
+  border-color:var(--cyan);
+  font-weight:bold;
+}
+
+.btn.danger{
+  color:var(--red);
+}
+
+.tableWrap{
+  overflow-x:auto;
+}
+
+table{
+  width:100%;
+  min-width:850px;
+  border-collapse:collapse;
+}
+
+th{
+  color:var(--muted);
+  font:9px monospace;
+  text-align:left;
+  padding:11px;
+  border-bottom:1px solid var(--line);
+}
+
+td{
+  padding:11px;
+  border-bottom:1px solid #17222e;
+  font:11px monospace;
+}
+
+.empty{
+  text-align:center;
+  color:var(--muted);
+  padding:30px;
+}
+
+.performance{
+  height:220px;
+  display:flex;
+  align-items:flex-end;
+  gap:5px;
+  padding:15px;
+  background:var(--input);
+  border:1px solid var(--line);
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.bar{
+  flex:1;
+  min-width:4px;
+  background:var(--cyan);
+  border-radius:3px 3px 0 0;
+}
+
+@media(max-width:850px){
+  .chartLayout{
+    grid-template-columns:1fr;
+  }
+}
+
+@media(max-width:650px){
+  .calcGrid,
+  .formGrid{
+    grid-template-columns:1fr;
+  }
+
+  .stats{
+    grid-template-columns:1fr 1fr;
+  }
+
+  #chart{
+    height:430px;
+  }
+}
+
+footer{
+  text-align:center;
+  color:var(--muted);
+  font:9px monospace;
+  padding:20px 0;
+}
+</style>
+</head>
+
+<body>
+
+<div class="app">
+
+<header>
+  <div class="logo">Trade<span>Lab</span></div>
+  <div class="status">● APP READY</div>
+</header>
+
+<nav class="nav">
+
+<button class="active" onclick="showPage('calculator',this)">
+Calculator
+</button>
+
+<button onclick="showPage('analyzer',this)">
+Market Analyzer
+</button>
+
+<button onclick="showPage('journal',this)">
+Trading Journal
+</button>
+
+<button onclick="showPage('performance',this)">
+Performance
+</button>
+<button onclick="showPage('chatPage',this)">
+  Real Chat
+</button>
+
+</nav>
+
+
+<!-- CALCULATOR -->
+
+<section id="calculator" class="page active">
+
+<div class="card">
+
+<div class="title">
+<h2>Risk / Reward Calculator</h2>
+<span>POSITION SIZING</span>
+</div>
+
+<div id="directionBadge" class="badge invalid">
+— ENTER VALID LEVELS —
+</div>
+
+<div class="calcGrid">
+
+<div class="field">
+<label>Account Balance <span>USD</span></label>
+<input id="balance" type="number" value="10000" step="any">
+</div>
+
+<div class="field">
+<label>Risk Per Trade <span>%</span></label>
+<input id="riskPct" type="number" value="1" step="any">
+</div>
+
+<div class="field">
+<label>Entry Price <span>USD</span></label>
+<input id="calcEntry" type="number" value="100" step="any">
+</div>
+
+<div class="field">
+<label>Stop Loss <span>USD</span></label>
+<input id="calcStop" type="number" value="95" step="any">
+</div>
+
+<div class="field">
+<label>Take Profit <span>USD</span></label>
+<input id="calcTarget" type="number" value="115" step="any">
+</div>
+
+</div>
+</div>
+
+<div class="card">
+
+<div class="title">
+<h2>Results</h2>
+<span>AUTOMATIC</span>
+</div>
+
+<div class="results">
+
+<div class="result">
+<small>Risk Amount</small>
+<strong id="riskAmount" class="red">$0.00</strong>
+</div>
+
+<div class="result">
+<small>Position Size</small>
+<strong id="positionSize" class="cyan">0</strong>
+</div>
+
+<div class="result">
+<small>Position Value</small>
+<strong id="positionValue" class="cyan">$0.00</strong>
+</div>
+
+<div class="result">
+<small>Potential Profit</small>
+<strong id="potentialProfit" class="green">$0.00</strong>
+</div>
+
+<div class="result wide">
+
+<small>Risk vs Reward</small>
+
+<div class="rrbar">
+
+<div id="riskBar" class="rrrisk" style="width:50%">
+RISK
+</div>
+
+<div id="rewardBar" class="rrreward" style="width:50%">
+REWARD
+</div>
+
+</div>
+
+<p style="
+text-align:center;
+color:var(--muted);
+font:11px monospace;
+margin-top:9px;
+">
+R:R
+<strong id="rrValue" class="cyan">
+1 : 1.00
+</strong>
+</p>
+
+</div>
+</div>
+
+<div id="calcWarning"
+style="
+display:none;
+color:var(--red);
+background:rgba(241,109,98,.08);
+border:1px solid rgba(241,109,98,.2);
+border-radius:8px;
+padding:10px;
+margin-top:12px;
+font:10px monospace;">
+</div>
+
+</div>
+</section>
+
+
+<!-- MARKET ANALYZER -->
+
+<section id="analyzer" class="page">
+
+<div class="analyzerTop">
+
+<select id="pairSelect">
+<option>EUR/USD</option>
+<option>GBP/USD</option>
+<option>USD/JPY</option>
+<option>XAU/USD</option>
+<option>BTC/USD</option>
+</select>
+
+<select id="timeSelect">
+<option>5m</option>
+<option selected>15m</option>
+<option>1H</option>
+<option>4H</option>
+<option>1D</option>
+</select>
+
+<button id="fvgTool" onclick="toggleTool('fvg')">FVG</button>
+<button id="liqTool" onclick="toggleTool('liquidity')">LIQUIDITY</button>
+<button id="supTool" onclick="toggleTool('support')">SUPPORT</button>
+<button id="resTool" onclick="toggleTool('resistance')">RESISTANCE</button>
+<button id="bosTool" onclick="toggleTool('bos')">BOS</button>
+
+<button onclick="generateCandles();drawChart()">RESET</button>
+
+</div>
+
+<div class="chartLayout">
+
+<div class="chartBox">
+
+<div class="chartHeader">
+
+<div>
+<div class="chartPair" id="chartPair">EUR/USD</div>
+
+<div class="chartInfo" id="chartTime">
+15m • Market Analyzer
+</div>
+</div>
+
+<div id="trendText" class="green">
+BULLISH
+</div>
+
+</div>
+
+<canvas id="chart"></canvas>
+
+</div>
+
+<div class="analysisPanel">
+
+<div class="title">
+<h2>Analysis</h2>
+</div>
+
+<div class="signal">
+<small>MARKET STRUCTURE</small>
+<div id="structureSignal" class="green">BULLISH</div>
+</div>
+
+<div class="signal">
+<small>FAIR VALUE GAP</small>
+<div id="fvgSignal" class="cyan">Scanning...</div>
+</div>
+
+<div class="signal">
+<small>LIQUIDITY</small>
+<div id="liqSignal" class="yellow">Scanning...</div>
+</div>
+
+<div class="signal">
+<small>SUPPORT</small>
+<div id="supportSignal">—</div>
+</div>
+
+<div class="signal">
+<small>RESISTANCE</small>
+<div id="resistanceSignal" class="red">—</div>
+</div>
+
+<div class="signal">
+<small>CURRENT PRICE</small>
+<div id="chartPrice" class="cyan">—</div>
+</div>
+
+</div>
+</div>
+</section>
+
+
+<!-- JOURNAL -->
+
+<section id="journal" class="page">
+
+<div class="stats">
+
+<div class="stat">
+<small>Total Trades</small>
+<strong id="totalTrades">0</strong>
+</div>
+
+<div class="stat">
+<small>Win Rate</small>
+<strong id="winRate" class="cyan">0%</strong>
+</div>
+
+<div class="stat">
+<small>Wins</small>
+<strong id="wins" class="green">0</strong>
+</div>
+
+<div class="stat">
+<small>Losses</small>
+<strong id="losses" class="red">0</strong>
+</div>
+
+<div class="stat">
+<small>Net R</small>
+<strong id="netR">0R</strong>
+</div>
+
+<div class="stat">
+<small>Average R:R</small>
+<strong id="avgRR" class="cyan">0</strong>
+</div>
+
+<div class="stat">
+<small>Best Trade</small>
+<strong id="bestTrade" class="green">0R</strong>
+</div>
+
+<div class="stat">
+<small>Worst Trade</small>
+<strong id="worstTrade" class="red">0R</strong>
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="title">
+<h2>Add Trade</h2>
+<span>TRADE JOURNAL</span>
+</div>
+
+<div class="formGrid">
+
+<div class="field">
+<label>Pair</label>
+
+<select id="journalPair">
+<option>EUR/USD</option>
+<option>GBP/USD</option>
+<option>USD/JPY</option>
+<option>XAU/USD</option>
+<option>BTC/USD</option>
+<option>NAS100</option>
+<option>US30</option>
+</select>
+</div>
+
+<div class="field">
+<label>Direction</label>
+
+<select id="journalDirection">
+<option>LONG</option>
+<option>SHORT</option>
+</select>
+</div>
+
+<div class="field">
+<label>Entry</label>
+<input id="journalEntry" type="number" step="any">
+</div>
+
+<div class="field">
+<label>Stop Loss</label>
+<input id="journalStop" type="number" step="any">
+</div>
+
+<div class="field">
+<label>Take Profit</label>
+<input id="journalTarget" type="number" step="any">
+</div>
+
+<div class="field">
+<label>Result</label>
+
+<select id="journalResult">
+<option>OPEN</option>
+<option>WIN</option>
+<option>LOSS</option>
+</select>
+
+</div>
+
+</div>
+
+<div class="actions">
+
+<button class="btn primary" onclick="addTrade()">
+SAVE TRADE
+</button>
+
+<button class="btn" onclick="clearJournalForm()">
+RESET
+</button>
+
+</div>
+
+</div>
+
+
+<div class="card">
+
+<div class="title">
+
+<h2>Trade History</h2>
+
+<span id="tradeCount">
+0 TRADES
+</span>
+
+</div>
+
+<div class="tableWrap">
+
+<table>
+
+<thead>
+<tr>
+<th>Date</th>
+<th>Pair</th>
+<th>Direction</th>
+<th>Entry</th>
+<th>SL</th>
+<th>TP</th>
+<th>R:R</th>
+<th>Result</th>
+<th>R</th>
+<th></th>
+</tr>
+</thead>
+
+<tbody id="journalBody"></tbody>
+
+</table>
+
+</div>
+
+<div class="actions">
+
+<button class="btn" onclick="exportCSV()">
+EXPORT CSV
+</button>
+
+<button class="btn danger" onclick="deleteAllTrades()">
+DELETE ALL
+</button>
+
+</div>
+
+</div>
+</section>
+
+
+<!-- PERFORMANCE -->
+
+<section id="performance" class="page">
+
+<div class="card">
+
+<div class="title">
+<h2>Performance Curve</h2>
+<span>R MULTIPLES</span>
+</div>
+
+<div id="performanceChart" class="performance"></div>
+
+</div>
+
+<div class="card">
+
+<div class="title">
+<h2>Summary</h2>
+</div>
+
+<div id="performanceSummary"
+style="
+color:var(--muted);
+font:11px monospace;
+line-height:2;">
+No trades yet.
+</div>
+
+</div>
+
+</section>
+<!-- REAL CHAT -->
+
+<section id="chatPage" class="page">
+
+  <div class="card">
+
+    <div class="title">
+      <h2>TradeLab Real Chat</h2>
+      <span>● LIVE CHAT</span>
+    </div>
+
+    <input
+      id="chatName"
+      type="text"
+      placeholder="Enter your name"
+      maxlength="30"
+    >
+
+    <div id="chatMessages" class="chatMessages">
+      <div class="empty">
+        No messages yet. Be the first!
+      </div>
+    </div>
+
+    <div class="chatSend">
+
+      <input
+        id="chatInput"
+        type="text"
+        placeholder="Type a message..."
+        maxlength="500"
+      >
+
+      <button
+        class="btn primary"
+        id="sendChat">
+        SEND
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+<footer>
+TRADELAB • EDUCATIONAL TRADING TOOL • NOT FINANCIAL ADVICE
+</footer>
+
+</div>
+
+
+<script>
+
+/* =====================================================
+NAVIGATION
+===================================================== */
+
+function showPage(page,button){
+
+  document.querySelectorAll(".page").forEach(function(p){
+    p.classList.remove("active");
+  });
+
+  const selectedPage=document.getElementById(page);
+
+  if(selectedPage){
+    selectedPage.classList.add("active");
+  }
+
+  document.querySelectorAll(".nav button").forEach(function(b){
+    b.classList.remove("active");
+  });
+
+  if(button){
+    button.classList.add("active");
+  }
+
+  if(page==="performance"){
+    renderPerformance();
+  }
+
+  if(page==="analyzer"){
+    setTimeout(function(){
+      resizeChart();
+    },50);
+  }
+}
+
+
+/* =====================================================
+CALCULATOR
+===================================================== */
+
+const calcFields=[
+  "balance",
+  "riskPct",
+  "calcEntry",
+  "calcStop",
+  "calcTarget"
+];
+
+function money(n){
+
+  return "$"+Number(n).toLocaleString(undefined,{
+    minimumFractionDigits:2,
+    maximumFractionDigits:2
+  });
+
+}
+
+function calculateRisk(){
+
+  const balance=parseFloat(
+    document.getElementById("balance").value
+  )||0;
+
+  const riskPct=parseFloat(
+    document.getElementById("riskPct").value
+  )||0;
+
+  const entry=parseFloat(
+    document.getElementById("calcEntry").value
+  )||0;
+
+  const stop=parseFloat(
+    document.getElementById("calcStop").value
+  )||0;
+
+  const target=parseFloat(
+    document.getElementById("calcTarget").value
+  )||0;
+
+  const riskAmount=balance*(riskPct/100);
+
+  const riskPerUnit=Math.abs(entry-stop);
+
+  const rewardPerUnit=Math.abs(target-entry);
+
+  let direction="";
+
+  if(entry>0 && stop<entry && target>entry){
+    direction="long";
+  }
+  else if(entry>0 && stop>entry && target<entry){
+    direction="short";
+  }
+
+  const badge=document.getElementById("directionBadge");
+  const warning=document.getElementById("calcWarning");
+
+  warning.style.display="none";
+
+  if(direction==="long"){
+
+    badge.className="badge long";
+    badge.textContent="▲ LONG POSITION";
+
+  }
+  else if(direction==="short"){
+
+    badge.className="badge short";
+    badge.textContent="▼ SHORT POSITION";
+
+  }
+  else{
+
+    badge.className="badge invalid";
+    badge.textContent="— CHECK LEVELS —";
+
+  }
+
+  const valid=direction && riskPerUnit>0;
+
+  const positionSize=valid
+    ?riskAmount/riskPerUnit
+    :0;
+
+  const positionValue=positionSize*entry;
+
+  const potentialProfit=positionSize*rewardPerUnit;
+
+  const rr=riskPerUnit>0
+    ?rewardPerUnit/riskPerUnit
+    :0;
+
+  document.getElementById("riskAmount").textContent=
+    money(riskAmount);
+
+  document.getElementById("positionSize").textContent=
+    positionSize.toLocaleString(undefined,{
+      maximumFractionDigits:4
+    });
+
+  document.getElementById("positionValue").textContent=
+    money(positionValue);
+
+  document.getElementById("potentialProfit").textContent=
+    money(potentialProfit);
+
+  document.getElementById("rrValue").textContent=
+    "1 : "+rr.toFixed(2);
+
+  let riskWidth=rr>0
+    ?(1/(1+rr))*100
+    :50;
+
+  riskWidth=Math.max(
+    8,
+    Math.min(92,riskWidth)
+  );
+
+  document.getElementById("riskBar").style.width=
+    riskWidth+"%";
+
+  document.getElementById("rewardBar").style.width=
+    (100-riskWidth)+"%";
+
+  if(entry && stop && target && !direction){
+
+    warning.style.display="block";
+
+    warning.textContent=
+      "Stop Loss and Take Profit appear to be on the wrong side of the entry.";
+
+  }
+}
+
+calcFields.forEach(function(id){
+
+  document.getElementById(id).addEventListener(
+    "input",
+    calculateRisk
+  );
+
+});
+
+
+/* =====================================================
+MARKET ANALYZER
+===================================================== */
+
+const chart=document.getElementById("chart");
+const ctx=chart.getContext("2d");
+
+let candles=[];
+
+let tools={
+  fvg:false,
+  liquidity:false,
+  support:false,
+  resistance:false,
+  bos:false
+};
+
+
+function resizeChart(){
+
+  if(!chart) return;
+
+  const rect=chart.getBoundingClientRect();
+
+  const ratio=window.devicePixelRatio||1;
+
+  chart.width=Math.max(1,rect.width*ratio);
+  chart.height=Math.max(1,rect.height*ratio);
+
+  ctx.setTransform(
+    ratio,
+    0,
+    0,
+    ratio,
+    0,
+    0
+  );
+
+  drawChart();
+}
+
+
+function generateCandles(){
+
+  candles=[];
+
+  let price=1.1500;
+
+  for(let i=0;i<90;i++){
+
+    const movement=
+      (Math.random()-.43)*.002;
+
+    const open=price;
+
+    const close=price+movement;
+
+    const high=
+      Math.max(open,close)+
+      Math.random()*.0008;
+
+    const low=
+      Math.min(open,close)-
+      Math.random()*.0008;
+
+    candles.push({
+      open:open,
+      high:high,
+      low:low,
+      close:close
+    });
+
+    price=close;
+  }
+
+}
+
+
+function getRange(){
+
+  return {
+    max:Math.max(
+      ...candles.map(function(c){
+        return c.high;
+      })
+    ),
+
+    min:Math.min(
+      ...candles.map(function(c){
+        return c.low;
+      })
+    )
+  };
+
+}
+
+
+function priceY(price,range,height){
+
+  const difference=range.max-range.min;
+
+  if(difference===0){
+    return height/2;
+  }
+
+  return height-
+    (
+      (price-range.min)/
+      difference
+    )*height;
+}
+
+
+function drawChart(){
+
+  if(!candles.length)return;
+
+  const width=chart.clientWidth;
+  const height=chart.clientHeight;
+
+  if(width<=0 || height<=0)return;
+
+  ctx.clearRect(
+    0,
+    0,
+    width,
+    height
+  );
+
+  const range=getRange();
+
+
+  /* GRID */
+
+  ctx.strokeStyle="#17222e";
+  ctx.lineWidth=1;
+
+  for(let i=1;i<8;i++){
+
+    const y=i*height/8;
+
+    ctx.beginPath();
+    ctx.moveTo(0,y);
+    ctx.lineTo(width,y);
+    ctx.stroke();
+
+  }
+
+  for(let i=1;i<10;i++){
+
+    const x=i*width/10;
+
+    ctx.beginPath();
+    ctx.moveTo(x,0);
+    ctx.lineTo(x,height);
+    ctx.stroke();
+
+  }
+
+
+  /* CANDLES */
+
+  const slot=width/candles.length;
+  const candleWidth=slot*.65;
+
+  candles.forEach(function(c,i){
+
+    const x=i*slot+slot/2;
+
+    const openY=priceY(
+      c.open,
+      range,
+      height
+    );
+
+    const closeY=priceY(
+      c.close,
+      range,
+      height
+    );
+
+    const highY=priceY(
+      c.high,
+      range,
+      height
+    );
+
+    const lowY=priceY(
+      c.low,
+      range,
+      height
+    );
+
+    const bullish=c.close>=c.open;
+
+    ctx.strokeStyle=
+      bullish
+      ?"#42d392"
+      :"#f16d62";
+
+    ctx.fillStyle=
+      bullish
+      ?"#42d392"
+      :"#f16d62";
+
+    ctx.beginPath();
+
+    ctx.moveTo(x,highY);
+    ctx.lineTo(x,lowY);
+
+    ctx.stroke();
+
+    ctx.fillRect(
+      x-candleWidth/2,
+      Math.min(openY,closeY),
+      candleWidth,
+      Math.max(
+        2,
+        Math.abs(closeY-openY)
+      )
+    );
+
+  });
+
+
+  drawTools(
+    range,
+    width,
+    height
+  );
+
+
+  const last=candles[candles.length-1].close;
+
+  document.getElementById("chartPrice").textContent=
+    last.toFixed(5);
+}
+
+
+/* =====================================================
+FVG
+===================================================== */
+
+function findFVG(){
+
+  const gaps=[];
+
+  for(let i=2;i<candles.length;i++){
+
+    const first=candles[i-2];
+    const third=candles[i];
+
+    if(third.low>first.high){
+
+      gaps.push({
+        type:"bullish",
+        top:third.low,
+        bottom:first.high,
+        index:i
+      });
+
+    }
+
+    if(third.high<first.low){
+
+      gaps.push({
+        type:"bearish",
+        top:first.low,
+        bottom:third.high,
+        index:i
+      });
+
+    }
+
+  }
+
+  return gaps;
+}
+
+
+function drawFVG(range,width,height){
+
+  const gaps=findFVG();
+
+  gaps.slice(-5).forEach(function(g){
+
+    const x=
+      g.index*
+      width/candles.length;
+
+    const w=
+      width/candles.length*3;
+
+    const top=priceY(
+      g.top,
+      range,
+      height
+    );
+
+    const bottom=priceY(
+      g.bottom,
+      range,
+      height
+    );
+
+    ctx.fillStyle=
+      g.type==="bullish"
+      ?"rgba(63,216,198,.16)"
+      :"rgba(241,109,98,.16)";
+
+    ctx.fillRect(
+      x,
+      top,
+      w,
+      Math.max(1,bottom-top)
+    );
+
+    ctx.strokeStyle=
+      g.type==="bullish"
+      ?"#3fd8c6"
+      :"#f16d62";
+
+    ctx.strokeRect(
+      x,
+      top,
+      w,
+      Math.max(1,bottom-top)
+    );
+
+  });
+
+  document.getElementById("fvgSignal").textContent=
+    gaps.length
+    ?(
+      gaps[gaps.length-1].type==="bullish"
+      ?"BULLISH FVG"
+      :"BEARISH FVG"
+    )
+    :"NO FVG FOUND";
+}
+
+
+/* =====================================================
+LIQUIDITY
+===================================================== */
+
+function findLiquidity(){
+
+  const highs=[];
+  const lows=[];
+
+  for(let i=2;i<candles.length-2;i++){
+
+    if(
+      candles[i].high>candles[i-1].high &&
+      candles[i].high>candles[i+1].high
+    ){
+
+      highs.push(candles[i].high);
+
+    }
+
+    if(
+      candles[i].low<candles[i-1].low &&
+      candles[i].low<candles[i+1].low
+    ){
+
+      lows.push(candles[i].low);
+
+    }
+
+  }
+
+  return {
+    highs:highs,
+    lows:lows
+  };
+}
+
+
+function drawLiquidity(range,width,height){
+
+  const liq=findLiquidity();
+
+  ctx.setLineDash([6,5]);
+
+  liq.highs.slice(-3).forEach(function(level){
+
+    const y=priceY(
+      level,
+      range,
+      height
+    );
+
+    ctx.strokeStyle="#e8c15a";
+
+    ctx.beginPath();
+
+    ctx.moveTo(0,y);
+    ctx.lineTo(width,y);
+
+    ctx.stroke();
+
+  });
+
+  liq.lows.slice(-3).forEach(function(level){
+
+    const y=priceY(
+      level,
+      range,
+      height
+    );
+
+    ctx.strokeStyle="#e8c15a";
+
+    ctx.beginPath();
+
+    ctx.moveTo(0,y);
+    ctx.lineTo(width,y);
+
+    ctx.stroke();
+
+  });
+
+  ctx.setLineDash([]);
+
+  document.getElementById("liqSignal").textContent=
+    liq.highs.length+
+    " highs / "+
+    liq.lows.length+
+    " lows";
+}
+
+
+/* =====================================================
+SUPPORT
+===================================================== */
+
+function drawSupport(range,width,height){
+
+  const levels=candles
+    .map(function(c){
+      return c.low;
+    })
+    .sort(function(a,b){
+      return a-b;
+    });
+
+  const level=
+    levels[
+      Math.floor(levels.length*.15)
+    ];
+
+  const y=priceY(
+    level,
+    range,
+    height
+  );
+
+  ctx.strokeStyle="#42d392";
+
+  ctx.setLineDash([10,6]);
+
+  ctx.beginPath();
+
+  ctx.moveTo(0,y);
+  ctx.lineTo(width,y);
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  document.getElementById("supportSignal").textContent=
+    level.toFixed(5);
+}
+
+
+/* =====================================================
+RESISTANCE
+===================================================== */
+
+function drawResistance(range,width,height){
+
+  const levels=candles
+    .map(function(c){
+      return c.high;
+    })
+    .sort(function(a,b){
+      return a-b;
+    });
+
+  const level=
+    levels[
+      Math.floor(levels.length*.85)
+    ];
+
+  const y=priceY(
+    level,
+    range,
+    height
+  );
+
+  ctx.strokeStyle="#f16d62";
+
+  ctx.setLineDash([10,6]);
+
+  ctx.beginPath();
+
+  ctx.moveTo(0,y);
+  ctx.lineTo(width,y);
+
+  ctx.stroke();
+
+  ctx.setLineDash([]);
+
+  document.getElementById("resistanceSignal").textContent=
+    level.toFixed(5);
+}
+
+
+/* =====================================================
+BOS
+===================================================== */
+
+function drawBOS(){
+
+  const recent=candles.slice(-20);
+
+  const oldHigh=Math.max(
+    ...recent
+      .slice(0,10)
+      .map(function(c){
+        return c.high;
+      })
+  );
+
+  const newHigh=Math.max(
+    ...recent
+      .slice(10)
+      .map(function(c){
+        return c.high;
+      })
+  );
+
+  const oldLow=Math.min(
+    ...recent
+      .slice(0,10)
+      .map(function(c){
+        return c.low;
+      })
+  );
+
+  const newLow=Math.min(
+    ...recent
+      .slice(10)
+      .map(function(c){
+        return c.low;
+      })
+  );
+
+  if(newHigh>oldHigh){
+
+    document.getElementById("structureSignal").textContent=
+      "BULLISH BOS";
+
+    document.getElementById("trendText").textContent=
+      "BULLISH";
+
+    document.getElementById("trendText").className=
+      "green";
+
+  }
+  else if(newLow<oldLow){
+
+    document.getElementById("structureSignal").textContent=
+      "BEARISH BOS";
+
+    document.getElementById("trendText").textContent=
+      "BEARISH";
+
+    document.getElementById("trendText").className=
+      "red";
+
+  }
+  else{
+
+    document.getElementById("structureSignal").textContent=
+      "RANGE";
+
+    document.getElementById("trendText").textContent=
+      "RANGE";
+
+    document.getElementById("trendText").className=
+      "yellow";
+
+  }
+}
+
+
+/* =====================================================
+DRAW TOOLS
+===================================================== */
+
+function drawTools(range,width,height){
+
+  if(tools.fvg){
+    drawFVG(
+      range,
+      width,
+      height
+    );
+  }
+
+  if(tools.liquidity){
+    drawLiquidity(
+      range,
+      width,
+      height
+    );
+  }
+
+  if(tools.support){
+    drawSupport(
+      range,
+      width,
+      height
+    );
+  }
+
+  if(tools.resistance){
+    drawResistance(
+      range,
+      width,
+      height
+    );
+  }
+
+  if(tools.bos){
+    drawBOS();
+  }
+
+}
+
+
+/* =====================================================
+TOOL BUTTONS
+===================================================== */
+
+function toggleTool(tool){
+
+  tools[tool]=!tools[tool];
+
+  const ids={
+    fvg:"fvgTool",
+    liquidity:"liqTool",
+    support:"supTool",
+    resistance:"resTool",
+    bos:"bosTool"
+  };
+
+  const button=document.getElementById(
+    ids[tool]
+  );
+
+  if(button){
+
+    button.classList.toggle(
+      "active",
+      tools[tool]
+    );
+
+  }
+
+  drawChart();
+}
+
+
+/* =====================================================
+PAIR
+===================================================== */
+
+document.getElementById("pairSelect")
+.addEventListener(
+  "change",
+  function(){
+
+    document.getElementById(
+      "chartPair"
+    ).textContent=this.value;
+
+    generateCandles();
+
+    drawChart();
+  }
+);
+
+
+/* =====================================================
+TIMEFRAME
+===================================================== */
+
+document.getElementById("timeSelect")
+.addEventListener(
+  "change",
+  function(){
+
+    document.getElementById(
+      "chartTime"
+    ).textContent=
+      this.value+
+      " • Market Analyzer";
+
+  }
+);
+
+
+/* =====================================================
+TRADING JOURNAL
+===================================================== */
+
+let trades=[];
+
+try{
+
+  trades=JSON.parse(
+    localStorage.getItem(
+      "tradelabTrades"
+    )||"[]"
+  );
+
+  if(!Array.isArray(trades)){
+    trades=[];
+  }
+
+}
+catch(error){
+
+  trades=[];
+
+}
+
+
+function saveTrades(){
+
+  try{
+
+    localStorage.setItem(
+      "tradelabTrades",
+      JSON.stringify(trades)
+    );
+
+  }
+  catch(error){
+
+    alert(
+      "Could not save trades on this browser."
+    );
+
+  }
+}
+
+
+/* =====================================================
+ADD TRADE
+===================================================== */
+
+function addTrade(){
+
+  const pair=document.getElementById(
+    "journalPair"
+  ).value;
+
+  const direction=document.getElementById(
+    "journalDirection"
+  ).value;
+
+  const entry=parseFloat(
+    document.getElementById(
+      "journalEntry"
+    ).value
+  );
+
+  const stop=parseFloat(
+    document.getElementById(
+      "journalStop"
+    ).value
+  );
+
+  const target=parseFloat(
+    document.getElementById(
+      "journalTarget"
+    ).value
+  );
+
+  const result=document.getElementById(
+    "journalResult"
+  ).value;
+
+
+  if(
+    !Number.isFinite(entry) ||
+    !Number.isFinite(stop) ||
+    !Number.isFinite(target)
+  ){
+
+    alert(
+      "Enter Entry, Stop Loss and Take Profit."
+    );
+
+    return;
+  }
+
+
+  let risk;
+  let reward;
+
+
+  if(direction==="LONG"){
+
+    risk=entry-stop;
+    reward=target-entry;
+
+  }
+  else{
+
+    risk=stop-entry;
+    reward=entry-target;
+
+  }
+
+
+  if(
+    risk<=0 ||
+    reward<=0
+  ){
+
+    alert(
+      "Check your trade levels."
+    );
+
+    return;
+  }
+
+
+  const rr=reward/risk;
+
+  let r=0;
+
+  if(result==="WIN"){
+    r=rr;
+  }
+
+  if(result==="LOSS"){
+    r=-1;
+  }
+
+
+  trades.unshift({
+
+    id:Date.now(),
+
+    date:new Date().toLocaleDateString(),
+
+    pair:pair,
+
+    direction:direction,
+
+    entry:entry,
+
+    stop:stop,
+
+    target:target,
+
+    rr:rr,
+
+    result:result,
+
+    r:r
+
+  });
+
+
+  saveTrades();
+
+  clearJournalForm();
+
+  updateJournal();
+
+  alert("Trade saved.");
+
+}
+
+
+/* =====================================================
+RESET FORM
+===================================================== */
+
+function clearJournalForm(){
+
+  document.getElementById(
+    "journalEntry"
+  ).value="";
+
+  document.getElementById(
+    "journalStop"
+  ).value="";
+
+  document.getElementById(
+    "journalTarget"
+  ).value="";
+
+  document.getElementById(
+    "journalResult"
+  ).value="OPEN";
+
+}
+
+
+/* =====================================================
+UPDATE JOURNAL
+===================================================== */
+
+function updateJournal(){
+
+  const total=trades.length;
+
+  const wins=trades.filter(
+    function(t){
+      return t.result==="WIN";
+    }
+  ).length;
+
+  const losses=trades.filter(
+    function(t){
+      return t.result==="LOSS";
+    }
+  ).length;
+
+  const closed=wins+losses;
+
+  const winRate=closed
+    ?wins/closed*100
+    :0;
+
+  const netR=trades.reduce(
+    function(sum,t){
+      return sum+(Number(t.r)||0);
+    },
+    0
+  );
+
+  const avgRR=total
+    ?trades.reduce(
+        function(sum,t){
+          return sum+(Number(t.rr)||0);
+        },
+        0
+      )/total
+    :0;
+
+  const best=total
+    ?Math.max(
+        ...trades.map(
+          function(t){
+            return Number(t.r)||0;
+          }
+        )
+      )
+    :0;
+
+  const worst=total
+    ?Math.min(
+        ...trades.map(
+          function(t){
+            return Number(t.r)||0;
+          }
+        )
+      )
+    :0;
+
+
+  document.getElementById(
+    "totalTrades"
+  ).textContent=total;
+
+  document.getElementById(
+    "wins"
+  ).textContent=wins;
+
+  document.getElementById(
+    "losses"
+  ).textContent=losses;
+
+  document.getElementById(
+    "winRate"
+  ).textContent=
+    winRate.toFixed(1)+"%";
+
+  const netElement=document.getElementById(
+    "netR"
+  );
+
+  netElement.textContent=
+    (netR>=0?"+":"")+
+    netR.toFixed(2)+"R";
+
+  netElement.className=
+    netR>=0
+    ?"green"
+    :"red";
+
+  document.getElementById(
+    "avgRR"
+  ).textContent=
+    avgRR.toFixed(2);
+
+  document.getElementById(
+    "bestTrade"
+  ).textContent=
+    (best>=0?"+":"")+
+    best.toFixed(2)+"R";
+
+  document.getElementById(
+    "worstTrade"
+  ).textContent=
+    worst.toFixed(2)+"R";
+
+
+  renderJournal();
+
+  renderPerformance();
+
+}
+
+
+/* =====================================================
+RENDER JOURNAL
+===================================================== */
+
+function renderJournal(){
+
+  const body=document.getElementById(
+    "journalBody"
+  );
+
+  document.getElementById(
+    "tradeCount"
+  ).textContent=
+    trades.length+
+    " TRADE"+
+    (trades.length===1?"":"S");
+
+
+  if(!trades.length){
+
+    body.innerHTML=`
+      <tr>
+        <td colspan="10" class="empty">
+          No trades saved yet.
+        </td>
+      </tr>
+    `;
+
+    return;
+  }
+
+
+  body.innerHTML="";
+
+
+  trades.forEach(function(t){
+
+    const row=document.createElement("tr");
+
+    const directionClass=
+      t.direction==="LONG"
+      ?"green"
+      :"red";
+
+    const resultClass=
+      t.result==="WIN"
+      ?"green"
+      :t.result==="LOSS"
+      ?"red"
+      :"yellow";
+
+    const rClass=
+      Number(t.r)>0
+      ?"green"
+      :Number(t.r)<0
+      ?"red"
+      :"yellow";
+
+
+    row.innerHTML=`
+
+      <td>${t.date}</td>
+
+      <td>${t.pair}</td>
+
+      <td class="${directionClass}">
+        ${t.direction}
+      </td>
+
+      <td>${t.entry}</td>
+
+      <td>${t.stop}</td>
+
+      <td>${t.target}</td>
+
+      <td>
+        1:${Number(t.rr).toFixed(2)}
+      </td>
+
+      <td class="${resultClass}">
+        ${t.result}
+      </td>
+
+      <td class="${rClass}">
+        ${Number(t.r)>0?"+":""}
+        ${Number(t.r).toFixed(2)}R
+      </td>
+
+      <td>
+        <button
+          class="btn danger"
+          onclick="deleteTrade(${t.id})">
+          ×
+        </button>
+      </td>
+
+    `;
+
+    body.appendChild(row);
+
+  });
+
+}
+
+
+/* =====================================================
+DELETE ONE TRADE
+===================================================== */
+
+function deleteTrade(id){
+
+  trades=trades.filter(
+    function(t){
+      return t.id!==id;
+    }
+  );
+
+  saveTrades();
+
+  updateJournal();
+
+}
+
+
+/* =====================================================
+DELETE ALL
+===================================================== */
+
+function deleteAllTrades(){
+
+  if(!trades.length){
+    return;
+  }
+
+  if(
+    !confirm(
+      "Delete all trades?"
+    )
+  ){
+    return;
+  }
+
+  trades=[];
+
+  saveTrades();
+
+  updateJournal();
+
+}
+
+
+/* =====================================================
+PERFORMANCE
+===================================================== */
+
+function renderPerformance(){
+
+  const box=document.getElementById(
+    "performanceChart"
+  );
+
+  box.innerHTML="";
+
+
+  if(!trades.length){
+
+    document.getElementById(
+      "performanceSummary"
+    ).textContent=
+      "No trades yet.";
+
+    return;
+  }
+
+
+  let running=0;
+
+  const curve=[];
+
+
+  [...trades]
+  .reverse()
+  .forEach(function(t){
+
+    running+=Number(t.r)||0;
+
+    curve.push(running);
+
+  });
+
+
+  const max=Math.max(
+    ...curve,
+    0
+  );
+
+  const min=Math.min(
+    ...curve,
+    0
+  );
+
+  const range=Math.max(
+    1,
+    max-min
+  );
+
+
+  curve.forEach(function(v){
+
+    const bar=document.createElement(
+      "div"
+    );
+
+    bar.className="bar";
+
+    bar.style.height=
+      Math.max(
+        4,
+        ((v-min)/range)*100
+      )+"%";
+
+    box.appendChild(bar);
+
+  });
+
+
+  const wins=trades.filter(
+    function(t){
+      return t.result==="WIN";
+    }
+  ).length;
+
+  const losses=trades.filter(
+    function(t){
+      return t.result==="LOSS";
+    }
+  ).length;
+
+  const closed=wins+losses;
+
+  const winRate=closed
+    ?wins/closed*100
+    :0;
+
+
+  document.getElementById(
+    "performanceSummary"
+  ).innerHTML=`
+
+    Trades: <b>${trades.length}</b><br>
+
+    Wins:
+    <b class="green">${wins}</b><br>
+
+    Losses:
+    <b class="red">${losses}</b><br>
+
+    Win Rate:
+    <b class="cyan">
+      ${winRate.toFixed(1)}%
+    </b><br>
+
+    Net Result:
+    <b>
+      ${running>=0?"+":""}
+      ${running.toFixed(2)}R
+    </b>
+
+  `;
+
+}
+
+
+/* =====================================================
+CSV EXPORT
+===================================================== */
+
+function exportCSV(){
+
+  if(!trades.length){
+
+    alert(
+      "No trades to export."
+    );
+
+    return;
+  }
+
+
+  const header=[
+    "Date",
+    "Pair",
+    "Direction",
+    "Entry",
+    "Stop Loss",
+    "Take Profit",
+    "R:R",
+    "Result",
+    "R"
+  ];
+
+
+  const rows=trades.map(
+    function(t){
+
+      return [
+
+        t.date,
+        t.pair,
+        t.direction,
+        t.entry,
+        t.stop,
+        t.target,
+        "1:"+Number(t.rr).toFixed(2),
+        t.result,
+        t.r
+
+      ];
+
+    }
+  );
+
+
+  const csv=[header,...rows]
+    .map(function(row){
+
+      return row.map(
+        function(v){
+
+          return '"'+
+            String(v)
+              .replace(/"/g,'""')+
+            '"';
+
+        }
+      ).join(",");
+
+    })
+    .join("\n");
+
+
+  const blob=new Blob(
+    [csv],
+    {
+      type:"text/csv;charset=utf-8;"
+    }
+  );
+
+
+  const url=URL.createObjectURL(blob);
+
+  const link=document.createElement("a");
+
+  link.href=url;
+
+  link.download=
+    "tradelab-journal.csv";
+
+  document.body.appendChild(link);
+
+  link.click();
+
+  document.body.removeChild(link);
+
+  URL.revokeObjectURL(url);
+
+}
+
+
+/* =====================================================
+START APP
+===================================================== */
+
+generateCandles();
+
+calculateRisk();
+
+updateJournal();
+
+setTimeout(function(){
+
+  resizeChart();
+
+},100);
+
+window.addEventListener(
+  "resize",
+  resizeChart
+);
+
+</script>
+<!-- TRADELAB REAL CHAT -->
+
+<section id="chatPage" class="page">
+
+  <div class="chatBox">
+
+    <div class="chatHeader">
+      <h2>TradeLab Real Chat</h2>
+      <small>● LIVE CHAT</small>
+    </div>
+
+    <div class="chatLogin">
+      <input
+        id="chatName"
+        type="text"
+        placeholder="Enter your name"
+        maxlength="30"
+      >
+    </div>
+
+    <div id="chatMessages">
+      <div class="empty">
+        No messages yet. Be the first!
+      </div>
+    </div>
+
+    <div class="chatInputArea">
+
+      <input
+        id="chatInput"
+        type="text"
+        placeholder="Type a message..."
+        maxlength="500"
+      >
+
+      <button id="sendChat">
+        SEND
+      </button>
+
+    </div>
+
+  </div>
+
+</section>
+
+
+<style>
+
+#chatPage {
+  display: none;
+}
+
+#chatPage.active {
+  display: block;
+}
+
+.chatBox {
+  background: var(--panel);
+  border: 1px solid var(--line);
+  border-radius: 13px;
+  overflow: hidden;
+}
+
+.chatHeader {
+  padding: 15px;
+  border-bottom: 1px solid var(--line);
+}
+
+.chatHeader h2 {
+  margin: 0;
+  font-size: 16px;
+}
+
+.chatHeader small {
+  color: var(--green);
+  font-size: 9px;
+}
+
+.chatLogin {
+  padding: 12px;
+  border-bottom: 1px solid var(--line);
+}
+
+.chatLogin input {
+  width: 100%;
+  padding: 11px;
+  border-radius: 8px;
+  border: 1px solid var(--line);
+  background: var(--input);
+  color: var(--text);
+}
+
+#chatMessages {
+  height: 350px;
+  overflow-y: auto;
+  padding: 15px;
+}
+
+.chatMessage {
+  margin-bottom: 12px;
+}
+
+.chatName {
+  font-size: 9px;
+  color: var(--muted);
+  margin-bottom: 4px;
+}
+
+.chatText {
+  display: inline-block;
+  padding: 9px 12px;
+  border-radius: 9px;
+  background: var(--input);
+}
+
+.chatTime {
+  font-size: 8px;
+  color: var(--muted);
+  margin-top: 3px;
+}
+
+.chatInputArea {
+  display: flex;
+  gap: 8px;
+  padding: 12px;
+  border-top: 1px solid var(--line);
+}
+
+#chatInput {
+  flex: 1;
+  width: auto;
+}
+
+#sendChat {
+  width: auto;
+  padding: 10px 15px;
+  background: var(--cyan);
+  color: #06100f;
+  border: 0;
+  border-radius: 8px;
+  font-weight: bold;
+}
+
+</style>
+
+
+<!-- FIREBASE -->
+
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
+
+<script>
+
+const firebaseConfig = {
+  apiKey: "AIzaSyCm70WCFu7tP-PwsVfyYuurcAQEAHpZz28",
+  authDomain: "tradelab-5c0d4.firebaseapp.com",
+  databaseURL: "https://tradelab-5c0d4-default-rtdb.firebaseio.com",
+  projectId: "tradelab-5c0d4",
+  storageBucket: "tradelab-5c0d4.firebasestorage.app",
+  messagingSenderId: "810630896597",
+  appId: "1:810630896597:web:41f8cbda8a1261e17d7b5c"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+const chatDatabase = firebase.database();
+
+const messagesRef =
+  chatDatabase.ref("chat/messages");
+
+
+const chatInput =
+  document.getElementById("chatInput");
+
+const chatName =
+  document.getElementById("chatName");
+
+const sendChat =
+  document.getElementById("sendChat");
+
+const chatMessages =
+  document.getElementById("chatMessages");
+
+
+function sendChatMessage() {
+
+  const name =
+    chatName.value.trim();
+
+  const text =
+    chatInput.value.trim();
+
+
+  if (!name) {
+
+    alert("Please enter your name.");
+
+    return;
+  }
+
+
+  if (!text) {
+
+    alert("Please type a message.");
+
+    return;
+  }
+
+
+  messagesRef.push({
+
+    name: name,
+
+    text: text,
+
+    time: new Date().toLocaleTimeString([], {
+      hour: "2-digit",
+      minute: "2-digit"
+    })
+
+  })
+
+  .then(function() {
+
+    chatInput.value = "";
+
+  })
+
+  .catch(function(error) {
+
+    alert("Chat error: " + error.message);
+
+    console.error(error);
+
+  });
+
+}
+
+
+sendChat.addEventListener(
+  "click",
+  sendChatMessage
+);
+
+
+chatInput.addEventListener(
+  "keydown",
+  function(event) {
+
+    if (event.key === "Enter") {
+
+      sendChatMessage();
+
+    }
+
+  }
+);
+
+
+messagesRef.on(
+  "value",
+  function(snapshot) {
+
+    chatMessages.innerHTML = "";
+
+    if (!snapshot.exists()) {
+
+      chatMessages.innerHTML =
+        "<div class='empty'>" +
+        "No messages yet. Be the first!" +
+        "</div>";
+
+      return;
+    }
+
+
+    snapshot.forEach(
+      function(child) {
+
+        const message =
+          child.val();
+
+
+        const box =
+          document.createElement("div");
+
+        box.className =
+          "chatMessage";
+
+
+        box.innerHTML =
+
+          "<div class='chatName'>" +
+          escapeChat(message.name || "Trader") +
+          "</div>" +
+
+          "<div class='chatText'>" +
+          escapeChat(message.text || "") +
+          "</div>" +
+
+          "<div class='chatTime'>" +
+          escapeChat(message.time || "") +
+          "</div>";
+
+
+        chatMessages.appendChild(box);
+
+      }
+    );
+
+
+    chatMessages.scrollTop =
+      chatMessages.scrollHeight;
+
+  }
+);
+
+
+function escapeChat(value) {
+
+  return String(value)
+
+    .replace(/&/g, "&amp;")
+
+    .replace(/</g, "&lt;")
+
+    .replace(/>/g, "&gt;")
+
+    .replace(/"/g, "&quot;")
+
+    .replace(/'/g, "&#039;");
+
+}
+
+
+console.log(
+  "TradeLab Real Chat connected"
+);
+
+</script>
+
+<!-- TRADELAB REAL CHAT FIREBASE -->
+
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
+
+<script>
+  const firebaseConfig = {
+    apiKey: "AIzaSyCm70WCFu7tP-PwsVfyYuurcAQEAHpZz28",
+    authDomain: "tradelab-5c0d4.firebaseapp.com",
+    databaseURL: "https://tradelab-5c0d4-default-rtdb.firebaseio.com",
+    projectId: "tradelab-5c0d4",
+    storageBucket: "tradelab-5c0d4.firebasestorage.app",
+    messagingSenderId: "810630896597",
+    appId: "1:810630896597:web:41f8cbda8a1261e17d7b5c"
+  };
+  
+  firebase.initializeApp(firebaseConfig);
+  
+  const chatDatabase = firebase.database();
+  const messagesRef = chatDatabase.ref("chat/messages");
+  
+  const chatName = document.getElementById("chatName");
+  const chatInput = document.getElementById("chatInput");
+  const sendChat = document.getElementById("sendChat");
+  const chatMessages = document.getElementById("chatMessages");
+  
+  function sendChatMessage() {
+    
+    const name = chatName.value.trim();
+    const text = chatInput.value.trim();
+    
+    if (!name) {
+      alert("Please enter your name.");
+      return;
+    }
+    
+    if (!text) {
+      return;
+    }
+    
+    messagesRef.push({
+        name: name,
+        text: text,
+        time: new Date().toLocaleTimeString([], {
+          hour: "2-digit",
+          minute: "2-digit"
+        })
+      })
+      .then(function() {
+        chatInput.value = "";
+      })
+      .catch(function(error) {
+        alert("Chat error: " + error.message);
+      });
+  }
+  
+  sendChat.addEventListener("click", sendChatMessage);
+  
+  chatInput.addEventListener("keydown", function(event) {
+    if (event.key === "Enter") {
+      sendChatMessage();
+    }
+  });
+  
+  messagesRef.on("value", function(snapshot) {
+    
+    chatMessages.innerHTML = "";
+    
+    if (!snapshot.exists()) {
+      chatMessages.innerHTML =
+        "<div class='empty'>No messages yet. Be the first!</div>";
+      return;
+    }
+    
+    snapshot.forEach(function(child) {
+      
+      const message = child.val();
+      
+      const box = document.createElement("div");
+      
+      box.className = "chatMessage";
+      
+      box.innerHTML =
+        "<div class='chatName'>" +
+        escapeChat(message.name || "Trader") +
+        "</div>" +
+        
+        "<div class='chatText'>" +
+        escapeChat(message.text || "") +
+        "</div>" +
+        
+        "<div class='chatTime'>" +
+        escapeChat(message.time || "") +
+        "</div>";
+      
+      chatMessages.appendChild(box);
+    });
+    
+    chatMessages.scrollTop =
+      chatMessages.scrollHeight;
+  });
+  
+  function escapeChat(value) {
+    
+    return String(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+  
+  console.log("TradeLab Real Chat connected");
+</script>
+</body>
+</html>
