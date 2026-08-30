@@ -48,7 +48,12 @@ header{
   font-size:23px;
   font-weight:800;
 }
-
+.brandSub {
+  margin-top: 4px;
+  color: var(--muted);
+  font: 8px monospace;
+  letter-spacing: 1px;
+}
 .logo span{
   color:var(--cyan);
 }
@@ -442,7 +447,20 @@ td{
     grid-template-columns:1fr;
   }
 }
+.deleteChatBtn {
+  margin-top: 5px;
+  background: transparent;
+  color: #f16d62;
+  border: 1px solid #f16d62;
+  border-radius: 6px;
+  padding: 4px 7px;
+  font-size: 8px;
+  cursor: pointer;
+}
 
+.deleteChatBtn:active {
+  transform: scale(.96);
+}
 @media(max-width:650px){
   .calcGrid,
   .formGrid{
@@ -472,7 +490,10 @@ footer{
 <div class="app">
 
 <header>
+  <div class="brand">
   <div class="logo">Trade<span>Lab</span></div>
+  <div class="brandSub">TRADING TOOLKIT • MARKET ANALYSIS</div>
+</div>
   <div class="status">● APP READY</div>
 </header>
 
@@ -649,7 +670,7 @@ font:10px monospace;">
 <button id="resTool" onclick="toggleTool('resistance')">RESISTANCE</button>
 <button id="bosTool" onclick="toggleTool('bos')">BOS</button>
 
-<button onclick="generateCandles();drawChart()">RESET</button>
+<button onclick="loadRealMarketData()">REFRESH</button>
 
 </div>
 
@@ -1172,7 +1193,8 @@ const chart=document.getElementById("chart");
 const ctx=chart.getContext("2d");
 
 let candles=[];
-
+let chartOffset = 0;
+const TWELVE_DATA_KEY = "e2cb7c2019d94b3582ec04bfe18ed906";
 let tools={
   fvg:false,
   liquidity:false,
@@ -1204,7 +1226,137 @@ function resizeChart(){
 
   drawChart();
 }
-
+async function loadRealMarketData() {
+  
+  const symbol =
+    document.getElementById("pairSelect").value;
+  
+  const timeframe =
+    document.getElementById("timeSelect").value;
+  
+  const intervalMap = {
+    "5m": "5min",
+    "15m": "15min",
+    "1H": "1h",
+    "4H": "4h",
+    "1D": "1day"
+  };
+  
+  const interval = intervalMap[timeframe];
+  
+  const chartInfo =
+    document.getElementById("chartTime");
+  
+  const priceBox =
+    document.getElementById("chartPrice");
+  
+  chartInfo.textContent =
+    timeframe + " • LOADING LIVE DATA...";
+  
+  priceBox.textContent = "—";
+  
+  try {
+    
+    const url =
+      "https://api.twelvedata.com/time_series" +
+      "?symbol=" + encodeURIComponent(symbol) +
+      "&interval=" + encodeURIComponent(interval) +
+      "&outputsize=90" +
+      "&apikey=" + encodeURIComponent(TWELVE_DATA_KEY);
+    
+    const response = await fetch(url);
+    
+    const data = await response.json();
+    
+    console.log("TWELVE DATA:", data);
+    console.log("HTTP STATUS:", response.status);
+    
+    if (!response.ok) {
+      
+      throw new Error(
+        "HTTP " +
+        response.status +
+        " — " +
+        (
+          data.message ||
+          "API request failed"
+        )
+      );
+      
+    }
+    
+    if (
+      data.status === "error" ||
+      !data.values
+    ) {
+      
+      throw new Error(
+        data.message ||
+        "No market data returned."
+      );
+      
+    }
+    
+    candles =
+      data.values
+      .slice()
+      .reverse()
+      .map(function(c) {
+        
+        return {
+          open: Number(c.open),
+          high: Number(c.high),
+          low: Number(c.low),
+          close: Number(c.close)
+        };
+        
+      });
+    
+    if (!candles.length) {
+      
+      throw new Error(
+        "The API returned zero candles."
+      );
+      
+    }
+    
+    document.getElementById(
+      "chartPair"
+    ).textContent = symbol;
+    
+    chartInfo.textContent =
+      timeframe +
+      " • LIVE MARKET DATA • " +
+      candles.length +
+      " CANDLES";
+    
+    drawChart();
+    
+    console.log(
+      "REAL CANDLES LOADED:",
+      candles.length
+    );
+    
+  }
+  
+  catch (error) {
+    
+    console.error(
+      "MARKET DATA ERROR:",
+      error
+    );
+    
+    chartInfo.textContent =
+      timeframe +
+      " • " +
+      error.message;
+    
+    priceBox.textContent =
+      "ERROR";
+    
+  }
+  
+}
 
 function generateCandles(){
 
@@ -1300,7 +1452,28 @@ function drawChart(){
 
   ctx.strokeStyle="#17222e";
   ctx.lineWidth=1;
+/* PRICE SCALE */
 
+ctx.fillStyle = "#718094";
+ctx.font = "10px monospace";
+ctx.textAlign = "right";
+ctx.textBaseline = "middle";
+
+for (let i = 0; i <= 8; i++) {
+  
+  const price =
+    range.max -
+    (range.max - range.min) * (i / 8);
+  
+  const y =
+    height * (i / 8);
+  
+  ctx.fillText(
+    price.toFixed(5),
+    width - 6,
+    y
+  );
+}
   for(let i=1;i<8;i++){
 
     const y=i*height/8;
@@ -1325,68 +1498,70 @@ function drawChart(){
 
 
   /* CANDLES */
+const visibleCount = 60;
 
-  const slot=width/candles.length;
-  const candleWidth=slot*.65;
+const maxOffset =
+  Math.max(0, candles.length - visibleCount);
 
-  candles.forEach(function(c,i){
+const start =
+  Math.min(
+    Math.max(0, Math.floor(chartOffset || 0)),
+    maxOffset
+  );
 
-    const x=i*slot+slot/2;
+const visibleCandles =
+  candles.slice(start, start + visibleCount);
 
-    const openY=priceY(
-      c.open,
-      range,
-      height
-    );
+const slot =
+  width / visibleCandles.length;
 
-    const closeY=priceY(
-      c.close,
-      range,
-      height
-    );
+const candleWidth =
+  slot * 0.65;
 
-    const highY=priceY(
-      c.high,
-      range,
-      height
-    );
-
-    const lowY=priceY(
-      c.low,
-      range,
-      height
-    );
-
-    const bullish=c.close>=c.open;
-
-    ctx.strokeStyle=
-      bullish
-      ?"#42d392"
-      :"#f16d62";
-
-    ctx.fillStyle=
-      bullish
-      ?"#42d392"
-      :"#f16d62";
-
-    ctx.beginPath();
-
-    ctx.moveTo(x,highY);
-    ctx.lineTo(x,lowY);
-
-    ctx.stroke();
-
-    ctx.fillRect(
-      x-candleWidth/2,
-      Math.min(openY,closeY),
-      candleWidth,
-      Math.max(
-        2,
-        Math.abs(closeY-openY)
-      )
-    );
-
-  });
+visibleCandles.forEach(function(c, i) {
+  
+  const x =
+    i * slot + slot / 2;
+  
+  const openY =
+    priceY(c.open, range, height);
+  
+  const closeY =
+    priceY(c.close, range, height);
+  
+  const highY =
+    priceY(c.high, range, height);
+  
+  const lowY =
+    priceY(c.low, range, height);
+  
+  const bullish =
+    c.close >= c.open;
+  
+  ctx.strokeStyle =
+    bullish ? "#42d392" : "#f16d62";
+  
+  ctx.fillStyle =
+    bullish ? "#42d392" : "#f16d62";
+  
+  ctx.beginPath();
+  
+  ctx.moveTo(x, highY);
+  ctx.lineTo(x, lowY);
+  
+  ctx.stroke();
+  
+  ctx.fillRect(
+    x - candleWidth / 2,
+    Math.min(openY, closeY),
+    candleWidth,
+    Math.max(
+      2,
+      Math.abs(closeY - openY)
+    )
+  );
+  
+});
 
 
   drawTools(
@@ -1397,50 +1572,344 @@ function drawChart(){
 
 
   const last=candles[candles.length-1].close;
+const lastY = priceY(
+  
+  last,
+  
+  range,
+  
+  height
+  
+);
 
+ctx.setLineDash([5, 4]);
+
+ctx.strokeStyle = "#3fd8c6";
+
+ctx.lineWidth = 1;
+
+ctx.beginPath();
+
+ctx.moveTo(0, lastY);
+
+ctx.lineTo(width, lastY);
+
+ctx.stroke();
+
+ctx.setLineDash([]);
+
+document.getElementById("chartPrice").textContent =
+  
+  last.toFixed(5);
   document.getElementById("chartPrice").textContent=
     last.toFixed(5);
 }
 
 
 /* =====================================================
-FVG
+REAL FVG — BASED ON ACTUAL OHLC CANDLES
 ===================================================== */
 
 function findFVG(){
 
-  const gaps=[];
+  const gaps = [];
 
-  for(let i=2;i<candles.length;i++){
+  if(candles.length < 3){
+    return gaps;
+  }
 
-    const first=candles[i-2];
-    const third=candles[i];
+  for(let i = 2; i < candles.length; i++){
 
-    if(third.low>first.high){
+    const first = candles[i - 2];
+    const middle = candles[i - 1];
+    const third = candles[i];
+
+    /* BULLISH FVG
+       Third candle low is above
+       first candle high
+    */
+
+    if(third.low > first.high){
 
       gaps.push({
-        type:"bullish",
-        top:third.low,
-        bottom:first.high,
-        index:i
+
+        type: "bullish",
+
+        top: third.low,
+
+        bottom: first.high,
+
+        index: i,
+
+        filled: false
+
       });
 
     }
 
-    if(third.high<first.low){
+
+    /* BEARISH FVG
+       Third candle high is below
+       first candle low
+    */
+
+    if(third.high < first.low){
 
       gaps.push({
-        type:"bearish",
-        top:first.low,
-        bottom:third.high,
-        index:i
+
+        type: "bearish",
+
+        top: first.low,
+
+        bottom: third.high,
+
+        index: i,
+
+        filled: false
+
       });
 
     }
 
   }
 
+  /* Check whether later candles
+     have completely filled the gap
+  */
+
+  gaps.forEach(function(g){
+
+    for(
+      let j = g.index + 1;
+      j < candles.length;
+      j++
+    ){
+
+      const c = candles[j];
+
+      if(g.type === "bullish"){
+
+        if(c.low <= g.bottom){
+
+          g.filled = true;
+          break;
+
+        }
+
+      }
+
+      if(g.type === "bearish"){
+
+        if(c.high >= g.top){
+
+          g.filled = true;
+          break;
+
+        }
+
+      }
+
+    }
+
+  });
+
   return gaps;
+
+}
+
+
+function drawFVG(range,width,height){
+
+  const gaps = findFVG();
+
+  /* Only show the most recent
+     unfilled FVGs
+  */
+
+  const activeGaps =
+    gaps
+      .filter(function(g){
+        return !g.filled;
+      })
+      .slice(-5);
+
+
+  activeGaps.forEach(function(g){
+
+    /*
+      IMPORTANT:
+
+      Your chart currently displays
+      only 60 candles.
+
+      So calculate the candle position
+      using the visible chart position.
+    */
+
+    const visibleCount = 60;
+
+    const maxOffset =
+      Math.max(
+        0,
+        candles.length - visibleCount
+      );
+
+    const start =
+      Math.min(
+        Math.max(
+          0,
+          Math.floor(chartOffset || 0)
+        ),
+        maxOffset
+      );
+
+    const candlePosition =
+      g.index - start;
+
+
+    if(
+      candlePosition < 0 ||
+      candlePosition > visibleCount
+    ){
+
+      return;
+
+    }
+
+
+    const slot =
+      width / visibleCount;
+
+
+    const x =
+      candlePosition * slot;
+
+
+    const w =
+      slot * 3;
+
+
+    const top =
+      priceY(
+        g.top,
+        range,
+        height
+      );
+
+
+    const bottom =
+      priceY(
+        g.bottom,
+        range,
+        height
+      );
+
+
+    /* FVG AREA */
+
+    ctx.fillStyle =
+      g.type === "bullish"
+      ? "rgba(63,216,198,.16)"
+      : "rgba(241,109,98,.16)";
+
+
+    ctx.fillRect(
+
+      x,
+
+      top,
+
+      w,
+
+      Math.max(
+        2,
+        bottom - top
+      )
+
+    );
+
+
+    /* FVG BORDER */
+
+    ctx.strokeStyle =
+      g.type === "bullish"
+      ? "#3fd8c6"
+      : "#f16d62";
+
+
+    ctx.lineWidth = 1;
+
+
+    ctx.strokeRect(
+
+      x,
+
+      top,
+
+      w,
+
+      Math.max(
+        2,
+        bottom - top
+      )
+
+    );
+
+  });
+
+
+  /* ANALYSIS TEXT */
+
+  const fvgSignal =
+    document.getElementById(
+      "fvgSignal"
+    );
+
+
+  if(!fvgSignal){
+    return;
+  }
+
+
+  if(!gaps.length){
+
+    fvgSignal.textContent =
+      "NO FVG FOUND";
+
+    return;
+
+  }
+
+
+  const latest =
+    gaps[gaps.length - 1];
+
+
+  const active =
+    gaps.filter(function(g){
+      return !g.filled;
+    });
+
+
+  if(!active.length){
+
+    fvgSignal.textContent =
+      "ALL FVGs FILLED";
+
+    return;
+
+  }
+
+
+  const latestActive =
+    active[active.length - 1];
+
+
+  fvgSignal.textContent =
+    latestActive.type === "bullish"
+    ? "BULLISH FVG • ACTIVE"
+    : "BEARISH FVG • ACTIVE";
+
 }
 
 
@@ -1846,19 +2315,16 @@ PAIR
 ===================================================== */
 
 document.getElementById("pairSelect")
-.addEventListener(
-  "change",
-  function(){
-
-    document.getElementById(
-      "chartPair"
-    ).textContent=this.value;
-
-    generateCandles();
-
-    drawChart();
-  }
-);
+  .addEventListener(
+    "change",
+    function() {
+      
+      chartOffset = 0;
+      
+      loadRealMarketData();
+      
+    }
+  );
 
 
 /* =====================================================
@@ -1866,18 +2332,16 @@ TIMEFRAME
 ===================================================== */
 
 document.getElementById("timeSelect")
-.addEventListener(
-  "change",
-  function(){
-
-    document.getElementById(
-      "chartTime"
-    ).textContent=
-      this.value+
-      " • Market Analyzer";
-
-  }
-);
+  .addEventListener(
+    "change",
+    function() {
+      
+      chartOffset = 0;
+      
+      loadRealMarketData();
+      
+    }
+  );
 
 
 /* =====================================================
@@ -2572,17 +3036,28 @@ function exportCSV(){
 START APP
 ===================================================== */
 
-generateCandles();
+/* =====================================================
+START APP
+===================================================== */
 
 calculateRisk();
 
 updateJournal();
 
-setTimeout(function(){
+/* LOAD REAL MARKET DATA */
+loadRealMarketData();
 
+/* RESIZE CHART AFTER PAGE RENDERS */
+setTimeout(function() {
+  
   resizeChart();
+  
+}, 300);
 
-},100);
+window.addEventListener(
+  "resize",
+  resizeChart
+);
 
 window.addEventListener(
   "resize",
@@ -2590,149 +3065,179 @@ window.addEventListener(
 );
 
 </script>
-<!-- TRADELAB REAL CHAT -->
-
-<section id="chatPage" class="page">
-
-  <div class="chatBox">
-
-    <div class="chatHeader">
-      <h2>TradeLab Real Chat</h2>
-      <small>● LIVE CHAT</small>
-    </div>
-
-    <div class="chatLogin">
-      <input
-        id="chatName"
-        type="text"
-        placeholder="Enter your name"
-        maxlength="30"
-      >
-    </div>
-
-    <div id="chatMessages">
-      <div class="empty">
-        No messages yet. Be the first!
-      </div>
-    </div>
-
-    <div class="chatInputArea">
-
-      <input
-        id="chatInput"
-        type="text"
-        placeholder="Type a message..."
-        maxlength="500"
-      >
-
-      <button id="sendChat">
-        SEND
-      </button>
-
-    </div>
-
-  </div>
-
-</section>
-
 
 <style>
-
-#chatPage {
-  display: none;
+/* =====================================================
+   TRADELAB MODERN CHAT DESIGN
+===================================================== */
+#chatPage{
+  display:none;
 }
-
-#chatPage.active {
-  display: block;
+#chatPage.active{
+  display:block;
 }
-
-.chatBox {
-  background: var(--panel);
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  overflow: hidden;
+.chatBox{
+  background:#0b121a;
+  border:1px solid #243442;
+  border-radius:16px;
+  overflow:hidden;
+  box-shadow:0 15px 40px rgba(0,0,0,.25);
 }
-
-.chatHeader {
-  padding: 15px;
-  border-bottom: 1px solid var(--line);
+/* HEADER */
+.chatHeader{
+  padding:18px;
+  background:linear-gradient(
+    135deg,
+    #101d28,
+    #0b141d
+  );
+  border-bottom:1px solid #243442;
 }
-
-.chatHeader h2 {
-  margin: 0;
-  font-size: 16px;
+.chatHeader h2{
+  margin:0;
+  font-size:18px;
+  letter-spacing:.3px;
 }
-
-.chatHeader small {
-  color: var(--green);
-  font-size: 9px;
+.chatHeader small{
+  display:block;
+  margin-top:5px;
+  color:#42d392;
+  font-size:9px;
+  font-family:monospace;
 }
-
-.chatLogin {
-  padding: 12px;
-  border-bottom: 1px solid var(--line);
+/* NAME */
+.chatLogin{
+  padding:12px 15px;
+  background:#0d1721;
+  border-bottom:1px solid #1d2b38;
 }
-
-.chatLogin input {
-  width: 100%;
-  padding: 11px;
-  border-radius: 8px;
-  border: 1px solid var(--line);
-  background: var(--input);
-  color: var(--text);
+.chatLogin input{
+  width:100%;
+  background:#080e15;
+  color:#eaf0f5;
+  border:1px solid #263746;
+  border-radius:10px;
+  padding:12px;
+  outline:none;
 }
-
-#chatMessages {
-  height: 350px;
-  overflow-y: auto;
-  padding: 15px;
+.chatLogin input:focus{
+  border-color:#3fd8c6;
 }
-
+/* MESSAGES */
+#chatMessages{
+  height:380px;
+  overflow-y:auto;
+  padding:18px 15px;
+  background:
+    radial-gradient(
+      circle at top,
+      #101c27 0,
+      #080e15 55%
+    );
+}
+/* MESSAGE */
 .chatMessage {
-  margin-bottom: 12px;
-}
-
-.chatName {
-  font-size: 9px;
-  color: var(--muted);
-  margin-bottom: 4px;
-}
-
-.chatText {
-  display: inline-block;
-  padding: 9px 12px;
-  border-radius: 9px;
-  background: var(--input);
-}
-
-.chatTime {
-  font-size: 8px;
-  color: var(--muted);
-  margin-top: 3px;
-}
-
-.chatInputArea {
+  margin-bottom: 14px;
+  max-width: 85%;
   display: flex;
-  gap: 8px;
-  padding: 12px;
-  border-top: 1px solid var(--line);
+  flex-direction: column;
 }
 
-#chatInput {
-  flex: 1;
-  width: auto;
+.myMessage {
+  margin-left: auto;
+  align-items: flex-end;
 }
 
-#sendChat {
-  width: auto;
-  padding: 10px 15px;
-  background: var(--cyan);
-  color: #06100f;
-  border: 0;
-  border-radius: 8px;
-  font-weight: bold;
+.otherMessage {
+  margin-right: auto;
+  align-items: flex-start;
 }
 
+.myMessage .chatText {
+  background: rgba(63, 216, 198, .15);
+  border-color: var(--cyan);
+  border-radius: 10px 4px 10px 10px;
+}
+
+.otherMessage .chatText {
+  background: var(--panel2);
+  border-radius: 4px 10px 10px 10px;
+}
+.chatName{
+  color:#3fd8c6;
+  font-size:10px;
+  font-weight:bold;
+  margin-bottom:5px;
+}
+.chatText{
+  display:inline-block;
+  background:#111d28;
+  border:1px solid #263746;
+  color:#eaf0f5;
+  padding:10px 13px;
+  border-radius:5px 14px 14px 14px;
+  font-size:12px;
+  line-height:1.5;
+  word-break:break-word;
+}
+.chatTime{
+  margin-top:5px;
+  color:#718094;
+  font-size:8px;
+}
+/* INPUT AREA */
+.chatInputArea{
+  display:flex;
+  gap:8px;
+  padding:13px;
+  background:#0d141d;
+  border-top:1px solid #243442;
+}
+#chatInput{
+  flex:1;
+  width:auto;
+  background:#080e15;
+  border:1px solid #263746;
+  color:#eaf0f5;
+  border-radius:10px;
+  padding:12px;
+  outline:none;
+}
+#chatInput:focus{
+  border-color:#3fd8c6;
+}
+#sendChat{
+  flex-shrink:0;
+  background:#3fd8c6;
+  color:#06100f;
+  border:none;
+  border-radius:10px;
+  padding:0 18px;
+  font-weight:bold;
+  cursor:pointer;
+}
+#sendChat:active{
+  transform:scale(.97);
+}
+/* PHONE */
+@media(max-width:650px){
+  .chatBox{
+    border-radius:13px;
+  }
+  #chatMessages{
+    height:400px;
+    padding:15px 12px;
+  }
+  .chatMessage{
+    max-width:92%;
+  }
+  .chatInputArea{
+    padding:10px;
+  }
+  #sendChat{
+    padding:0 15px;
+  }
+}
 </style>
 
 
@@ -2767,7 +3272,11 @@ const chatInput =
 
 const chatName =
   document.getElementById("chatName");
+const savedChatName = localStorage.getItem("tradelabChatName");
 
+if (savedChatName) {
+  chatName.value = savedChatName;
+}
 const sendChat =
   document.getElementById("sendChat");
 
@@ -2790,7 +3299,7 @@ function sendChatMessage() {
 
     return;
   }
-
+localStorage.setItem("tradelabChatName", name);
 
   if (!text) {
 
@@ -2801,17 +3310,19 @@ function sendChatMessage() {
 
 
   messagesRef.push({
-
-    name: name,
-
-    text: text,
-
-    time: new Date().toLocaleTimeString([], {
-      hour: "2-digit",
-      minute: "2-digit"
-    })
-
-  })
+  
+  name: name,
+  
+  text: text,
+  
+  time: new Date().toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit"
+  }),
+  
+  sender: name
+  
+})
 
   .then(function() {
 
@@ -2877,24 +3388,34 @@ messagesRef.on(
         const box =
           document.createElement("div");
 
-        box.className =
-          "chatMessage";
+        const currentName = chatName.value.trim();
+
+box.className =
+  "chatMessage " +
+  (message.sender === currentName ? "myMessage" : "otherMessage");
 
 
         box.innerHTML =
 
-          "<div class='chatName'>" +
-          escapeChat(message.name || "Trader") +
-          "</div>" +
-
-          "<div class='chatText'>" +
-          escapeChat(message.text || "") +
-          "</div>" +
-
-          "<div class='chatTime'>" +
-          escapeChat(message.time || "") +
-          "</div>";
-
+          box.innerHTML =
+  
+  "<div class='chatName'>" +
+  escapeChat(message.name || "Trader") +
+  "</div>" +
+  
+  "<div class='chatText'>" +
+  escapeChat(message.text || "") +
+  "</div>" +
+  
+  "<div class='chatTime'>" +
+  escapeChat(message.time || "") +
+  "</div>" +
+  
+  (message.sender === currentName ?
+    "<button class='deleteChatBtn' onclick=\"deleteChatMessage('" +
+    child.key +
+    "')\">DELETE</button>" :
+    "");
 
         chatMessages.appendChild(box);
 
@@ -2924,205 +3445,27 @@ function escapeChat(value) {
     .replace(/'/g, "&#039;");
 
 }
-
+function deleteChatMessage(messageId) {
+  
+  if (!confirm("Delete this message?")) {
+    return;
+  }
+  
+  messagesRef
+    .child(messageId)
+    .remove()
+    .catch(function(error) {
+      alert("Could not delete message: " + error.message);
+      console.error(error);
+    });
+  
+}
 
 console.log(
   "TradeLab Real Chat connected"
 );
 
-</script>
 
-<!-- TRADELAB REAL CHAT FIREBASE -->
-
-<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-app-compat.js"></script>
-<script src="https://www.gstatic.com/firebasejs/12.18.0/firebase-database-compat.js"></script>
-
-<script>
-  const firebaseConfig = {
-    apiKey: "AIzaSyCm70WCFu7tP-PwsVfyYuurcAQEAHpZz28",
-    authDomain: "tradelab-5c0d4.firebaseapp.com",
-    databaseURL: "https://tradelab-5c0d4-default-rtdb.firebaseio.com",
-    projectId: "tradelab-5c0d4",
-    storageBucket: "tradelab-5c0d4.firebasestorage.app",
-    messagingSenderId: "810630896597",
-    appId: "1:810630896597:web:41f8cbda8a1261e17d7b5c"
-  };
-  
-  firebase.initializeApp(firebaseConfig);
-  
-  const chatDatabase = firebase.database();
-  const messagesRef = chatDatabase.ref("chat/messages");
-  
-  const chatName = document.getElementById("chatName");
-  const chatInput = document.getElementById("chatInput");
-  const sendChat = document.getElementById("sendChat");
-  const chatMessages = document.getElementById("chatMessages");
-  
-  function sendChatMessage() {
-    
-    const name = chatName.value.trim();
-    const text = chatInput.value.trim();
-    
-    if (!name) {
-      alert("Please enter your name.");
-      return;
-    }
-    
-    if (!text) {
-      return;
-    }
-    
-    messagesRef.push({
-        name: name,
-        text: text,
-        time: new Date().toLocaleTimeString([], {
-          hour: "2-digit",
-          minute: "2-digit"
-        })
-      })
-      .then(function() {
-        chatInput.value = "";
-      })
-      .catch(function(error) {
-        alert("Chat error: " + error.message);
-      });
-  }
-  
-  sendChat.addEventListener("click", sendChatMessage);
-  
-  chatInput.addEventListener("keydown", function(event) {
-    if (event.key === "Enter") {
-      sendChatMessage();
-    }
-  });
-  
-  messagesRef.on("value", function(snapshot) {
-    
-    chatMessages.innerHTML = "";
-    
-    if (!snapshot.exists()) {
-      chatMessages.innerHTML =
-        "<div class='empty'>No messages yet. Be the first!</div>";
-      return;
-    }
-    
-    snapshot.forEach(function(child) {
-      
-      const message = child.val();
-      
-      const box = document.createElement("div");
-      
-      box.className = "chatMessage";
-      
-      box.innerHTML =
-        "<div class='chatName'>" +
-        escapeChat(message.name || "Trader") +
-        "</div>" +
-        
-        "<div class='chatText'>" +
-        escapeChat(message.text || "") +
-        "</div>" +
-        
-        "<div class='chatTime'>" +
-        escapeChat(message.time || "") +
-        "</div>";
-      
-      chatMessages.appendChild(box);
-    });
-    
-    chatMessages.scrollTop =
-      chatMessages.scrollHeight;
-  });
-  
-  function escapeChat(value) {
-    
-    return String(value)
-      .replace(/&/g, "&amp;")
-      .replace(/</g, "&lt;")
-      .replace(/>/g, "&gt;")
-      .replace(/"/g, "&quot;")
-      .replace(/'/g, "&#039;");
-  }
-  
-  console.log("TradeLab Real Chat connected");
-  /* =====================================================
-   TRADELAB REAL CHAT DESIGN
-===================================================== */
-
-#chatPage .card{
-  padding:0;
-  overflow:hidden;
-}
-
-#chatPage .title{
-  margin:0;
-  padding:16px;
-  border-bottom:1px solid var(--line);
-}
-
-#chatPage .title h2{
-  font-size:17px;
-}
-
-#chatPage .title span{
-  color:var(--green);
-}
-
-#chatName{
-  margin:14px;
-  width:calc(100% - 28px);
-}
-
-.chatMessages{
-  height:380px;
-  overflow-y:auto;
-  padding:15px;
-  background:#080e15;
-  border-top:1px solid var(--line);
-  border-bottom:1px solid var(--line);
-}
-
-.chatMessage{
-  margin-bottom:14px;
-  max-width:85%;
-}
-
-.chatName{
-  font-size:9px;
-  color:var(--cyan);
-  margin-bottom:4px;
-}
-
-.chatText{
-  display:inline-block;
-  padding:10px 13px;
-  background:var(--panel2);
-  border:1px solid var(--line);
-  border-radius:4px 10px 10px 10px;
-  font-size:12px;
-  line-height:1.4;
-}
-
-.chatTime{
-  margin-top:4px;
-  color:var(--muted);
-  font-size:8px;
-}
-
-.chatSend{
-  display:flex;
-  gap:8px;
-  padding:12px;
-  background:var(--panel);
-}
-
-.chatSend input{
-  flex:1;
-}
-
-.chatSend button{
-  flex-shrink:0;
-}
 </script>
 </body>
 </html>
